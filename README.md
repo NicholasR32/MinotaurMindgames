@@ -1,6 +1,6 @@
 # Problem 1: Minotaur's Birthday Party
 
-![The cake at the end of the maze.](https://github.com/NicholasR32/MinotaurMindgames/blob/main/imgs/mazemake.png)
+![The cake at the end of the maze.](https://github.com/NicholasR32/MinotaurMindgames/blob/main/imgs/mazecake.png)
 
 Image credits: [Ashmolean Museum](https://www.ashmolean.org/article/myths-of-the-labyrinth), [Evan Amos](https://en.wikipedia.org/wiki/Cupcake#/media/File:Hostess-Cupcake-Whole.jpg)
 
