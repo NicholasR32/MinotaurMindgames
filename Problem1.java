@@ -5,16 +5,17 @@
 
 import java.util.*;
 import java.io.*;
+import java.util.concurrent.Semaphore;
 
 public class Problem1
 {
     public static int NUM_GUESTS = 10;
+    public static GuestThread[] guests = new GuestThread[NUM_GUESTS];
 
     public static boolean DEBUG = true;
 
     public static void main(String[] args)
     {
-        GuestThread[] guests = new GuestThread[NUM_GUESTS];
         // Start the threads
         for (int i = 0; i < NUM_GUESTS; i++)
         {
@@ -22,26 +23,16 @@ public class Problem1
             guests[i].start();
         }
 
+        Labyrinth lab = new Labyrinth();
         // This loop acts as the Minotaur, selecting guests at random until they succeed.
         int c = 0;
-        while (!GuestThread.allVisited && c < 1000)
+        while (!GuestThread.allVisited && c < 10000)
         {
             // Labyrinth occupied, can't send anyone in yet.
             c++;
-            if (GuestThread.occupied)
-            {
-                if (DEBUG) System.out.println("\toccupied " + c);
-                continue;
-            }
-            if (DEBUG) System.out.println("attempt " + c);
-            // Pick a guest at random
-            int nextGuest = (int)(Math.random() * NUM_GUESTS);
+            //if (DEBUG) System.out.println("attempt " + c);
             // Send guest into labyrinth
-            GuestThread.occupied = true;
-            if (DEBUG) System.out.println("Sending guest " + (nextGuest+1));
-            guests[nextGuest].enterLabyrinth();
-
-                
+            lab.sendGuest();
         }
         // Stop every thread
         for (GuestThread guest : guests)
@@ -62,30 +53,45 @@ public class Problem1
         }
 
         if (DEBUG) System.out.println("GGGGGGGGG");
-        System.out.println("It took " + totalVisits + " to reach success.");
+        System.out.println("The Minotaur is appeased.");
+        System.out.println("It took " + totalVisits + " labyrinth visits to reach success.");
     }
 }
 
+// Represents the labyrinth containing the plate.
+class Labyrinth
+{
+    // Semaphore that controls access to the labyrinth
+    public static Semaphore lock = new Semaphore(1);
+    // The plate, on which a cupcake is offered to the guests.
+    public static boolean plateHasCupcake = true;
+
+    public static boolean DEBUG = true;
+    // Select a random guest to enter next.
+    public void sendGuest()
+    {
+        int nextGuest = (int)(Math.random() * Problem1.NUM_GUESTS);
+        if (DEBUG) System.out.println("Sending guest " + (nextGuest+1));
+        Problem1.guests[nextGuest].enterLabyrinth();
+    }
+
+}
 class GuestThread extends Thread
 {
     // Whether any guest has announced victory.
     // Only used by Guest 1, when all guests have certainly visited at least once.
     public static boolean allVisited = false;
-    // The plate, on which a cupcake is offered to the guests.
-    public static boolean plateHasCupcake = true;
-    // Whether the labyrinth is occupied.
-    public static boolean occupied = false;
 
     // What number guest this is
     private int id;
-    // How many guests have eaten a cupcake. Again, only used by Guest 1
+    // How many guests have eaten a cupcake. Only used by Guest 1
     private int counter;
     // Whether this guest has eaten a cupcake
     private boolean eaten;
     // How many times this guest has visited the labyrinth
     private int numVisits;
     // Whether this guest is in the labyrinth
-    private boolean inLabyrinth;
+    private boolean chosen;
     // Whether to keep running
     private boolean done;
 
@@ -97,22 +103,69 @@ class GuestThread extends Thread
         this.counter = 0;
         this.eaten = false;
         this.numVisits = 0;
-        this.inLabyrinth = false;
+        this.chosen = false;
         this.done = false;
     }
 
     public void run()
     {
-        // Spin while partying outside the labyrinth
+        // Spin while partying outside the labyrinth.
         while (!done)
         {
-            if (inLabyrinth)
+            if (chosen)
             {
-                occupied = true;
-                visitLabyrinth();
-                occupied = false;
-                inLabyrinth = false;
+                try
+                {
+                    // Attempt to acquire the lock and enter the labyrinth.
+                    if (DEBUG) System.out.println("Guest " + id + " attempting to enter...");
+                    Labyrinth.lock.acquire();
+                    visitLabyrinth();
+                    Labyrinth.lock.release();
+                    chosen = false;
+                }
+                catch (InterruptedException e) {}
             }
+            if (done) break;
+        }
+    }
+
+    public void visitLabyrinth()
+    {
+        if (DEBUG) System.out.println("\tGuest " + this.id + " has entered");
+        this.numVisits++;
+
+        // If this is guest 1, mark one more guest as visited if cupcake eaten.
+        if (this.id == 1)
+        {
+            // Increment counter and request new cupcake.
+            if (!Labyrinth.plateHasCupcake)
+            {
+                this.counter++;
+                Labyrinth.plateHasCupcake = true;
+                if (DEBUG) System.out.println("\tGuest " + this.id + " logged new visit - TOTAL: " + counter);
+                if (DEBUG) System.out.println("\tGuest " + this.id + " requested new cupcake");
+            }
+            // If everyone else is sure to have eaten, announce victory.
+            if (this.counter == Problem1.NUM_GUESTS-1)
+            {
+                System.out.println("Guest " + this.id + " correctly announces that everyone has visited the labyrinth at least once.");
+                allVisited = true;
+            }
+        }
+        // Eat the cupcake if there is one, and this guest has not eaten yet.
+        else if (!this.eaten && Labyrinth.plateHasCupcake)
+        {
+            this.eaten = true;
+            Labyrinth.plateHasCupcake = false;
+            if (DEBUG) System.out.println("\tGuest " + this.id + " ate the cupcake");
+        }
+        else if (this.eaten)
+        {
+            if (DEBUG) System.out.println("\tGuest " + this.id + " already ate");
+        }
+        else if (!this.eaten && !Labyrinth.plateHasCupcake)
+        {
+            if (DEBUG) System.out.println("\tGuest " + this.id + " has nothing to eat :(");
         }
     }
 
@@ -133,50 +186,11 @@ class GuestThread extends Thread
 
     public void enterLabyrinth()
     {
-        this.inLabyrinth = true;
+        this.chosen = true;
     }
 
     public void finish()
     {
         this.done = true;
-    }
-
-    public void visitLabyrinth()
-    {
-        if (DEBUG) System.out.println("Guest " + this.id + " has entered");
-        this.numVisits++;
-
-        // If this is guest 1, mark one more guest as visited if cupcake eaten.
-        if (this.id == 1)
-        {
-            // Increment counter and request new cupcake.
-            if (!plateHasCupcake)
-            {
-                this.counter++;
-                plateHasCupcake = true;
-                System.out.println("\tnew visit - TOTAL: " + counter);
-                System.out.println("\tcupcake is now " + plateHasCupcake);
-            }
-            // If everyone else is sure to have eaten, announce victory.
-            if (this.counter == Problem1.NUM_GUESTS-1)
-            {
-                allVisited = true;
-            }
-        }
-        // Eat the cupcake if there is one, and this guest has not eaten yet.
-        else if (!this.eaten && plateHasCupcake)
-        {
-            this.eaten = true;
-            plateHasCupcake = false;
-            if (DEBUG) System.out.println("\tate the cupcake");
-        }
-        else if (this.eaten)
-        {
-            if (DEBUG) System.out.println("\talready ate");
-        }
-        else if (!this.eaten && !plateHasCupcake)
-        {
-            if (DEBUG) System.out.println("\tnothing to eat :(");
-        }
     }
 }
