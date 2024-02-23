@@ -1,5 +1,5 @@
 // Nicholas Rolland
-// Assignment 2
+// Assignment 2, Problem 1 - Minotaur's Birthday Party
 // COP4520, Spring 2024, Prof. Juan Parra
 // 2/23/2024
 
@@ -12,7 +12,7 @@ public class Problem1
     public static int NUM_GUESTS = 10;
     public static GuestThread[] guests = new GuestThread[NUM_GUESTS];
 
-    public static boolean DEBUG = true;
+    public static boolean DEBUG = false;
 
     public static void main(String[] args)
     {
@@ -25,15 +25,12 @@ public class Problem1
 
         Labyrinth lab = new Labyrinth();
         // This loop acts as the Minotaur, selecting guests at random until they succeed.
-        int c = 0;
-        while (!GuestThread.allVisited && c < 10000)
+        while (!GuestThread.allVisited)
         {
-            // Labyrinth occupied, can't send anyone in yet.
-            c++;
-            //if (DEBUG) System.out.println("attempt " + c);
             // Send guest into labyrinth
             lab.sendGuest();
         }
+
         // Stop every thread
         for (GuestThread guest : guests)
         {
@@ -66,7 +63,9 @@ class Labyrinth
     // The plate, on which a cupcake is offered to the guests.
     public static boolean plateHasCupcake = true;
 
-    public static boolean DEBUG = true;
+    // Toggle this to see detailed actions.
+    public static boolean DEBUG = false;
+
     // Select a random guest to enter next.
     public void sendGuest()
     {
@@ -76,6 +75,8 @@ class Labyrinth
     }
 
 }
+
+// A running thread representing a single guest.
 class GuestThread extends Thread
 {
     // Whether any guest has announced victory.
@@ -95,6 +96,7 @@ class GuestThread extends Thread
     // Whether to keep running
     private boolean done;
 
+    // Toggle this to see detailed thread actions.
     public static boolean DEBUG = true;
 
     public GuestThread(int id)
@@ -117,7 +119,7 @@ class GuestThread extends Thread
                 try
                 {
                     // Attempt to acquire the lock and enter the labyrinth.
-                    if (DEBUG) System.out.println("Guest " + id + " attempting to enter...");
+                    if (DEBUG) System.out.println("Guest " + id + " is attempting to enter...");
                     Labyrinth.lock.acquire();
                     visitLabyrinth();
                     Labyrinth.lock.release();
@@ -129,6 +131,7 @@ class GuestThread extends Thread
         }
     }
 
+    // Once in the labyrinth, initiate strategy.
     public void visitLabyrinth()
     {
         if (DEBUG) System.out.println("\tGuest " + this.id + " has entered");
@@ -159,10 +162,12 @@ class GuestThread extends Thread
             Labyrinth.plateHasCupcake = false;
             if (DEBUG) System.out.println("\tGuest " + this.id + " ate the cupcake");
         }
+        // Already ate, nothing to do here.
         else if (this.eaten)
         {
             if (DEBUG) System.out.println("\tGuest " + this.id + " already ate");
         }
+        // Needs to eat a cupcake, but there is none, so must get one later.
         else if (!this.eaten && !Labyrinth.plateHasCupcake)
         {
             if (DEBUG) System.out.println("\tGuest " + this.id + " has nothing to eat :(");
