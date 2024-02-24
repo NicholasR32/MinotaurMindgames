@@ -44,12 +44,12 @@ public class Problem2
 class Showroom
 {
     // Semaphore that locks the room
-    public static Semaphore lock = new Semaphore(1);
+    public static Semaphore lock = new Semaphore(1, true);
 
     // Toggle this to see detailed actions.
     public static boolean DEBUG = false;
 
-    // Select a random guest to enter next.
+    // Process this guest's presence in the room.
     public static void enterShowroom(int guestID)
     {
         String[] responses = {"sparkling","radiant","crystalline","monochromatic","transparent","bland","pure","vague"};
