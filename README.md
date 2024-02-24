@@ -75,3 +75,8 @@ Strategy 2 is similar to 1, but implements a lock in the form of a sign. Still, 
 Strategy 3 seems like the most orderly one, and is starvation-free. Once a guest enters the queue, he/she is guaranteed to see the vase, assuming everyone ahead finishes in a finite amount of time. While the guests will have to wait in line instead of partying elsewhere in the castle, we only care that they will get to see the vase.
 
 Therefore, I implement **Strategy 3** in my solution to Problem 2.
+Similar to the labyrinth in Problem 1, the showroom is represented by a class containing a lock. When a guest thread starts up, it attempts to acquire the lock, and due to the behavior of Java's Semaphore class, access will be provided on a FIFO basis.
+
+A guest may randomly decide to see the vase more than once, and will come up with an opinion about the vase each time he/she sees it.
+
+Happy Birthday, Minotaur.
