@@ -1,3 +1,15 @@
+# Instructions
+Clone the repo, or simply download `Problem1.java` and `Problem2.java` and run each of them individually, e.g.:
+```
+javac Problem1.java
+java Problem1
+```
+or, in a single command:
+```
+java Problem1.java
+```
+Output describing the actions of each thread will be in the terminal.
+
 # Problem 1: Minotaur's Birthday Party
 
 ![The cake at the end of the maze.](https://github.com/NicholasR32/MinotaurMindgames/blob/main/imgs/mazecake.png)
